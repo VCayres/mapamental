@@ -106,11 +106,8 @@
       <button id="linkMode" class="btn-primary">Conectar: desativado</button>
       <button id="deleteSelected" class="btn-muted">Excluir selecionado</button>
       <button id="fitView" class="btn-secondary">Ir para o centro</button>
-      <button id="exportJson" class="btn-secondary">Salvar JSON</button>
-      <button id="importJson" class="btn-secondary">Carregar JSON</button>
-      <button id="printPdf" class="btn-secondary">Imprimir PDF (1 página)</button>
+      <button id="printPdf" class="btn-secondary">Exportar PDF (1 página)</button>
       <button id="clearAll" class="btn-danger">Reiniciar atividade</button>
-      <input id="fileInput" type="file" accept="application/json" hidden />
     </div>
   </header>
 
@@ -123,8 +120,7 @@
         <li>Crie caixas vazias.</li>
         <li>Digite os conceitos dentro delas.</li>
         <li>Ative <strong>Conectar</strong> e clique em duas caixas.</li>
-        <li>Exporte em JSON para continuar depois.</li>
-        <li>Use <strong>Imprimir PDF</strong> para gerar 1 página legível.</li>
+        <li>Use <strong>Exportar PDF</strong> para gerar 1 página legível.</li>
       </ol>
       <div id="status" class="status">Nós: 0 • Conectores: 0</div>
     </aside>
@@ -141,7 +137,6 @@
     const wrap = document.getElementById('canvasWrap');
     const linkModeBtn = document.getElementById('linkMode');
     const statusEl = document.getElementById('status');
-    const fileInput = document.getElementById('fileInput');
 
     let nodeId = 1;
     let selectedNode = null;
@@ -237,24 +232,6 @@
       updateStatus();
     }
 
-    function getMapData() {
-      const nodes = [...board.querySelectorAll('.node')].map((el) => ({
-        id: el.dataset.id,
-        title: el.querySelector('header span')?.textContent || '',
-        text: el.querySelector('.content')?.textContent || '',
-        x: Number.parseInt(el.style.left, 10),
-        y: Number.parseInt(el.style.top, 10)
-      }));
-      return { nodeId, nodes, edges };
-    }
-
-    function loadMapData(data) {
-      board.innerHTML = ''; links.innerHTML = ''; edges.length = 0;
-      nodeId = data.nodeId || 1;
-      (data.nodes || []).forEach((n) => createNode(n));
-      (data.edges || []).forEach((e) => edges.push(e));
-      redrawEdges(); updateStatus();
-    }
 
     function bootstrapBlank() {
       board.innerHTML = ''; links.innerHTML = ''; edges.length = 0;
@@ -284,17 +261,6 @@
       bootstrapBlank();
     });
 
-    document.getElementById('exportJson').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(getMapData(), null, 2)], { type: 'application/json' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'mapa-mental-estudante.json'; a.click(); URL.revokeObjectURL(a.href);
-    });
-    document.getElementById('importJson').addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0]; if (!file) return;
-      try { loadMapData(JSON.parse(await file.text())); } catch (_) { alert('Arquivo JSON inválido.'); }
-      finally { fileInput.value = ''; }
-    });
 
     document.getElementById('printPdf').addEventListener('click', () => window.print());
     document.addEventListener('keydown', (e) => { if (e.key === 'Delete') deleteSelectedNode(); });
