@@ -1,0 +1,13 @@
+{
+  "name": "Mapa Mental Jurídico OAB3D",
+  "version": "1.0.0",
+  "description": "Web app para criação e estudo de mapas mentais jurídicos.",
+  "entryPoint": "index.html",
+  "type": "HTML",
+  "author": "Equipe Cayres",
+  "minWidth": 800,
+  "minHeight": 600,
+  "aspectRatio": "16:9",
+  "aiEnabled": false,
+  "maxAiRequests": 0
+}
