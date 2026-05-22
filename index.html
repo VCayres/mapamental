@@ -157,13 +157,13 @@
       return v.replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
     }
 
-    function createNode({ id = uid(), title = 'Conceito', text = '', x = 920, y = 620 }) {
+    function createNode({ id = uid(), title = '', text = '', x = 920, y = 620 }) {
       const el = document.createElement('article');
       el.className = 'node';
       el.dataset.id = id;
       el.style.left = `${x}px`;
       el.style.top = `${y}px`;
-      el.innerHTML = `<header><span>${escapeHtml(title)}</span><span class="pill">${id}</span></header><div class="content" contenteditable="true" aria-label="conteúdo do conceito">${escapeHtml(text)}</div>`;
+      el.innerHTML = `<header><span contenteditable="true" aria-label="título do conceito">${escapeHtml(title)}</span><span class="pill">${id}</span></header><div class="content" contenteditable="true" aria-label="conteúdo do conceito">${escapeHtml(text)}</div>`;
       board.appendChild(el);
 
       el.addEventListener('click', (e) => {
@@ -259,14 +259,14 @@
     function bootstrapBlank() {
       board.innerHTML = ''; links.innerHTML = ''; edges.length = 0;
       selectedNode = null; linkSource = null;
-      createNode({ title: 'Conceito 1', text: '', x: 680, y: 420 });
-      createNode({ title: 'Conceito 2', text: '', x: 1080, y: 420 });
-      createNode({ title: 'Conceito 3', text: '', x: 880, y: 740 });
+      createNode({ title: '', text: '', x: 680, y: 420 });
+      createNode({ title: '', text: '', x: 1080, y: 420 });
+      createNode({ title: '', text: '', x: 880, y: 740 });
       updateStatus();
     }
 
     document.getElementById('addNode').addEventListener('click', () => {
-      createNode({ title: 'Novo conceito', text: '', x: wrap.scrollLeft + 760, y: wrap.scrollTop + 500 });
+      createNode({ title: '', text: '', x: wrap.scrollLeft + 760, y: wrap.scrollTop + 500 });
     });
     document.getElementById('deleteSelected').addEventListener('click', deleteSelectedNode);
     linkModeBtn.addEventListener('click', () => {
