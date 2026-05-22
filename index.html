@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OAB3D • Mapa Mental Jurídico</title>
+  <title>OAB3D • Objeto Interativo de Aprendizagem</title>
   <style>
     :root {
       --oab-blue: #1A3350;
@@ -26,48 +26,34 @@
       overflow: hidden;
     }
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0.75rem 1rem;
-      background: var(--oab-blue);
-      color: var(--oab-white);
-      border-bottom: 4px solid var(--oab-gold);
-      flex-wrap: wrap;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.75rem 1rem; background: var(--oab-blue); color: var(--oab-white);
+      border-bottom: 4px solid var(--oab-gold); flex-wrap: wrap;
     }
     .brand { font-size: 1.1rem; font-weight: 800; letter-spacing: .3px; }
     .controls { display: flex; flex-wrap: wrap; gap: .5rem; }
     button {
-      border: none;
-      border-radius: 8px;
-      padding: .55rem .8rem;
-      font-weight: 700;
-      cursor: pointer;
+      border: none; border-radius: 8px; padding: .55rem .8rem; font-weight: 700; cursor: pointer;
     }
     .btn-primary { background: var(--oab-gold); color: #202020; }
     .btn-secondary { background: #fff; color: var(--oab-blue); }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-muted { background: #e8edf7; color: var(--oab-blue); }
 
-    main { display: grid; grid-template-columns: 300px 1fr; min-height: 0; }
+    main { display: grid; grid-template-columns: 320px 1fr; min-height: 0; }
     aside { border-right: 1px solid var(--line); background: #fff; padding: .8rem; overflow: auto; }
     aside h2 { color: var(--oab-blue); margin: 0 0 .6rem; font-size: 1rem; }
     .hint {
       font-size: .87rem; line-height: 1.35; background: #f8f9fc;
       border: 1px solid var(--line); border-radius: 10px; padding: .65rem; margin-bottom: .8rem;
     }
-    .legend { font-size: .82rem; }
-    .legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
     .status {
       margin-top: .8rem; font-size: .8rem; color: #4e5f79;
       border-top: 1px solid var(--line); padding-top: .6rem;
     }
 
     #canvasWrap { position: relative; overflow: auto; background: #fbfcff; }
-    #links {
-      position: absolute; inset: 0; width: 2400px; height: 1500px; pointer-events: none;
-    }
+    #links { position: absolute; inset: 0; width: 2400px; height: 1500px; pointer-events: none; }
     #board {
       position: relative; width: 2400px; height: 1500px;
       background-image: radial-gradient(#e3e7ef 1px, transparent 1px);
@@ -83,51 +69,69 @@
       padding: .45rem .6rem; background: var(--oab-blue); color: #fff;
       border-radius: 12px 12px 0 0; font-weight: 700; cursor: grab; font-size: .86rem;
     }
-    .node.central header { background: var(--oab-gold); color: #252525; }
-    .node .content { padding: .55rem .65rem; font-size: .83rem; line-height: 1.3; min-height: 68px; outline: none; }
+    .node .content {
+      padding: .55rem .65rem; font-size: .86rem; line-height: 1.35;
+      min-height: 84px; outline: none; white-space: pre-wrap;
+    }
     .node.selected { outline: 3px solid var(--oab-gold); }
     .node.source { outline: 3px dashed var(--oab-blue); }
     .pill { background: rgba(255,255,255,.2); padding: 2px 7px; border-radius: 999px; font-size: .7rem; }
-    .empty { padding: 1rem; color: #6d7890; }
+
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      body { display: block; background: #fff; height: auto; overflow: visible; }
+      header, aside { display: none !important; }
+      main { display: block; }
+      #canvasWrap { overflow: visible; background: #fff; }
+      #board, #links {
+        width: 277mm !important;
+        height: 190mm !important;
+      }
+      #board { background: #fff !important; }
+      .node {
+        box-shadow: none;
+        break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .node .content { font-size: 11px; line-height: 1.25; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">OAB3D • Editor de Mapas Mentais</div>
+    <div class="brand">OAB3D • Objeto Interativo: Conecte os Conceitos</div>
     <div class="controls">
-      <button id="addNode" class="btn-secondary">+ Novo bloco</button>
+      <button id="addNode" class="btn-secondary">+ Nova caixa vazia</button>
       <button id="linkMode" class="btn-primary">Conectar: desativado</button>
       <button id="deleteSelected" class="btn-muted">Excluir selecionado</button>
       <button id="fitView" class="btn-secondary">Ir para o centro</button>
-      <button id="exportJson" class="btn-secondary">Exportar JSON</button>
-      <button id="importJson" class="btn-secondary">Importar JSON</button>
-      <button id="clearAll" class="btn-danger">Limpar mapa</button>
+      <button id="exportJson" class="btn-secondary">Salvar JSON</button>
+      <button id="importJson" class="btn-secondary">Carregar JSON</button>
+      <button id="printPdf" class="btn-secondary">Imprimir PDF (1 página)</button>
+      <button id="clearAll" class="btn-danger">Reiniciar atividade</button>
       <input id="fileInput" type="file" accept="application/json" hidden />
     </div>
   </header>
 
   <main>
     <aside>
-      <h2>Fluxo sugerido (Constitucional)</h2>
-      <div class="hint">Clique nos blocos para editar. Arraste pelo topo para mover. No modo <strong>Conectar</strong>, clique em dois blocos para ligar. Use <strong>Delete</strong> para excluir o bloco selecionado.</div>
-      <div class="legend">
-        <p><span style="background:#D4AF37"></span>Bloco central</p>
-        <p><span style="background:#1A3350"></span>Perguntas e decisões</p>
-      </div>
-      <h2>Atalhos mentais</h2>
-      <ul style="font-size:.82rem;line-height:1.35;padding-left:1rem;">
-        <li><strong>Art. 21</strong>: Competência Exclusiva da União.</li>
-        <li><strong>Art. 23</strong>: Competência Comum.</li>
-        <li><strong>Art. 22</strong>: Competência Privativa da União.</li>
-        <li><strong>Art. 24</strong>: Competência Concorrente.</li>
-        <li><strong>Art. 30, I</strong>: Interesse local do Município.</li>
-      </ul>
+      <h2>Missão do estudante</h2>
+      <div class="hint">Preencha as caixas com os conceitos aprendidos nas aulas anteriores, arraste para organizar e conecte as ideias em um mapa lógico próprio.</div>
+      <h2>Como usar</h2>
+      <ol style="font-size:.83rem;line-height:1.35;padding-left:1rem;">
+        <li>Crie caixas vazias.</li>
+        <li>Digite os conceitos dentro delas.</li>
+        <li>Ative <strong>Conectar</strong> e clique em duas caixas.</li>
+        <li>Exporte em JSON para continuar depois.</li>
+        <li>Use <strong>Imprimir PDF</strong> para gerar 1 página legível.</li>
+      </ol>
       <div id="status" class="status">Nós: 0 • Conectores: 0</div>
     </aside>
 
     <section id="canvasWrap">
-      <svg id="links"></svg>
-      <div id="board"></div>
+      <svg id="links" aria-label="conectores do mapa"></svg>
+      <div id="board" aria-label="área de mapa mental"></div>
     </section>
   </main>
 
@@ -146,22 +150,20 @@
     const edges = [];
 
     function uid() { return `n${nodeId++}`; }
-
     function updateStatus() {
       statusEl.textContent = `Nós: ${board.querySelectorAll('.node').length} • Conectores: ${edges.length}`;
     }
-
     function escapeHtml(v) {
       return v.replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
     }
 
-    function createNode({ id = uid(), title, text, x, y, central = false }) {
+    function createNode({ id = uid(), title = 'Conceito', text = '', x = 920, y = 620 }) {
       const el = document.createElement('article');
-      el.className = `node ${central ? 'central' : ''}`;
+      el.className = 'node';
       el.dataset.id = id;
       el.style.left = `${x}px`;
       el.style.top = `${y}px`;
-      el.innerHTML = `<header><span>${escapeHtml(title)}</span><span class="pill">${id}</span></header><div class="content" contenteditable="true">${escapeHtml(text)}</div>`;
+      el.innerHTML = `<header><span>${escapeHtml(title)}</span><span class="pill">${id}</span></header><div class="content" contenteditable="true" aria-label="conteúdo do conceito">${escapeHtml(text)}</div>`;
       board.appendChild(el);
 
       el.addEventListener('click', (e) => {
@@ -171,7 +173,7 @@
             linkSource = id;
             el.classList.add('source');
           } else if (linkSource !== id) {
-            const exists = edges.some(edge => edge.from === linkSource && edge.to === id);
+            const exists = edges.some((edge) => edge.from === linkSource && edge.to === id);
             if (!exists) edges.push({ from: linkSource, to: id });
             document.querySelector(`[data-id="${linkSource}"]`)?.classList.remove('source');
             linkSource = null;
@@ -180,21 +182,18 @@
           }
           return;
         }
-        document.querySelectorAll('.node.selected').forEach(n => n.classList.remove('selected'));
+        document.querySelectorAll('.node.selected').forEach((n) => n.classList.remove('selected'));
         el.classList.add('selected');
         selectedNode = id;
       });
 
       const handle = el.querySelector('header');
-      let dragging = false;
-      let dx = 0;
-      let dy = 0;
+      let dragging = false; let dx = 0; let dy = 0;
       handle.addEventListener('pointerdown', (e) => {
         dragging = true;
         handle.style.cursor = 'grabbing';
         const rect = el.getBoundingClientRect();
-        dx = e.clientX - rect.left;
-        dy = e.clientY - rect.top;
+        dx = e.clientX - rect.left; dy = e.clientY - rect.top;
         handle.setPointerCapture(e.pointerId);
       });
       handle.addEventListener('pointermove', (e) => {
@@ -204,27 +203,20 @@
         el.style.top = `${Math.max(0, e.clientY - br.top - dy)}px`;
         redrawEdges();
       });
-      handle.addEventListener('pointerup', () => {
-        dragging = false;
-        handle.style.cursor = 'grab';
-      });
+      handle.addEventListener('pointerup', () => { dragging = false; handle.style.cursor = 'grab'; });
 
       updateStatus();
       return id;
     }
 
-    function center(el) {
-      return { x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop + el.offsetHeight / 2 };
-    }
-
+    function center(el) { return { x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop + el.offsetHeight / 2 }; }
     function redrawEdges() {
       links.innerHTML = '';
-      edges.forEach(edge => {
+      edges.forEach((edge) => {
         const a = document.querySelector(`[data-id="${edge.from}"]`);
         const b = document.querySelector(`[data-id="${edge.to}"]`);
         if (!a || !b) return;
-        const p1 = center(a);
-        const p2 = center(b);
+        const p1 = center(a); const p2 = center(b);
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
         line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
@@ -246,33 +238,37 @@
     }
 
     function getMapData() {
-      const nodes = [...board.querySelectorAll('.node')].map(el => ({
+      const nodes = [...board.querySelectorAll('.node')].map((el) => ({
         id: el.dataset.id,
         title: el.querySelector('header span')?.textContent || '',
         text: el.querySelector('.content')?.textContent || '',
         x: Number.parseInt(el.style.left, 10),
-        y: Number.parseInt(el.style.top, 10),
-        central: el.classList.contains('central')
+        y: Number.parseInt(el.style.top, 10)
       }));
       return { nodeId, nodes, edges };
     }
 
     function loadMapData(data) {
-      board.innerHTML = '';
-      links.innerHTML = '';
-      edges.length = 0;
+      board.innerHTML = ''; links.innerHTML = ''; edges.length = 0;
       nodeId = data.nodeId || 1;
-      (data.nodes || []).forEach(n => createNode(n));
-      (data.edges || []).forEach(e => edges.push(e));
-      redrawEdges();
+      (data.nodes || []).forEach((n) => createNode(n));
+      (data.edges || []).forEach((e) => edges.push(e));
+      redrawEdges(); updateStatus();
+    }
+
+    function bootstrapBlank() {
+      board.innerHTML = ''; links.innerHTML = ''; edges.length = 0;
+      selectedNode = null; linkSource = null;
+      createNode({ title: 'Conceito 1', text: '', x: 680, y: 420 });
+      createNode({ title: 'Conceito 2', text: '', x: 1080, y: 420 });
+      createNode({ title: 'Conceito 3', text: '', x: 880, y: 740 });
       updateStatus();
     }
 
     document.getElementById('addNode').addEventListener('click', () => {
-      createNode({ title: 'Novo tópico', text: 'Digite o conteúdo jurídico aqui...', x: wrap.scrollLeft + 760, y: wrap.scrollTop + 500 });
+      createNode({ title: 'Novo conceito', text: '', x: wrap.scrollLeft + 760, y: wrap.scrollTop + 500 });
     });
     document.getElementById('deleteSelected').addEventListener('click', deleteSelectedNode);
-
     linkModeBtn.addEventListener('click', () => {
       isLinkMode = !isLinkMode;
       linkModeBtn.textContent = `Conectar: ${isLinkMode ? 'ativado' : 'desativado'}`;
@@ -283,61 +279,27 @@
     });
 
     document.getElementById('fitView').addEventListener('click', () => wrap.scrollTo({ left: 700, top: 350, behavior: 'smooth' }));
-
     document.getElementById('clearAll').addEventListener('click', () => {
-      if (!confirm('Deseja limpar todo o mapa?')) return;
-      bootstrap();
+      if (!confirm('Deseja reiniciar a atividade com caixas vazias?')) return;
+      bootstrapBlank();
     });
 
     document.getElementById('exportJson').addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(getMapData(), null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'mapa-mental-oab3d.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'mapa-mental-estudante.json'; a.click(); URL.revokeObjectURL(a.href);
     });
-
     document.getElementById('importJson').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      try {
-        const raw = await file.text();
-        const data = JSON.parse(raw);
-        loadMapData(data);
-      } catch (_) {
-        alert('Arquivo JSON inválido.');
-      } finally {
-        fileInput.value = '';
-      }
+      const file = e.target.files[0]; if (!file) return;
+      try { loadMapData(JSON.parse(await file.text())); } catch (_) { alert('Arquivo JSON inválido.'); }
+      finally { fileInput.value = ''; }
     });
 
+    document.getElementById('printPdf').addEventListener('click', () => window.print());
     document.addEventListener('keydown', (e) => { if (e.key === 'Delete') deleteSelectedNode(); });
 
-    function bootstrap() {
-      board.innerHTML = '';
-      links.innerHTML = '';
-      edges.length = 0;
-      selectedNode = null;
-      linkSource = null;
-
-      const central = createNode({ title: 'MAPA MENTAL DE DECISÃO: QUAL É A COMPETÊNCIA?', text: 'Leia o enunciado e responda às perguntas na ordem para identificar a competência constitucional.', x: 860, y: 560, central: true });
-      const n2 = createNode({ title: '1) Administrar ou Legislar?', text: 'Ação prática no mundo real (administrar) ou criar norma (legislar)?', x: 430, y: 220 });
-      const n3 = createNode({ title: 'Administrar → Art. 21 x Art. 23', text: 'Soberania federal exclusiva (Art. 21) ou dever social comum (Art. 23)?', x: 180, y: 540 });
-      const n4 = createNode({ title: '2) Área estrutural do Direito?', text: 'Civil, Penal, Processual, Eleitoral, Trabalho e regras gerais de Trânsito?', x: 860, y: 220 });
-      const n5 = createNode({ title: 'Resposta: Art. 22 (Privativa)', text: 'União legisla. Estado só com autorização por Lei Complementar federal.', x: 1220, y: 420 });
-      const n6 = createNode({ title: '3) Área social/regional?', text: 'Tributário, Penitenciário, Consumidor, Meio Ambiente?', x: 1440, y: 220 });
-      const n7 = createNode({ title: 'Resposta: Art. 24 (Concorrente)', text: 'União cria norma geral; Estado detalha.', x: 1620, y: 520 });
-      const n8 = createNode({ title: '4) Lei federal posterior?', text: 'Lei federal superveniente SUSPENDE A EFICÁCIA da lei estadual nas partes conflitantes.', x: 1410, y: 840 });
-      const n9 = createNode({ title: '5) Interesse local?', text: 'Horário de banco/comércio de bairro/coleta de lixo: competência municipal (Art. 30, I).', x: 490, y: 900 });
-
-      edges.push({ from: central, to: n2 }, { from: n2, to: n3 }, { from: central, to: n4 }, { from: n4, to: n5 }, { from: n4, to: n6 }, { from: n6, to: n7 }, { from: n7, to: n8 }, { from: central, to: n9 });
-      redrawEdges();
-      updateStatus();
-    }
-
-    bootstrap();
+    bootstrapBlank();
   </script>
 </body>
 </html>
