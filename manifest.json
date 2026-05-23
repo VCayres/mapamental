@@ -1,0 +1,13 @@
+{
+  "name": "Mapa Mental Jurídico OAB3D",
+  "version": "1.1.0",
+  "description": "Objeto interativo lúdico em formato de quebra-cabeça com feedback de IA.",
+  "entryPoint": "index.html",
+  "type": "HTML",
+  "author": "Equipe Cayres",
+  "minWidth": 800,
+  "minHeight": 600,
+  "aspectRatio": "16:9",
+  "aiEnabled": true,
+  "maxAiRequests": 10
+}

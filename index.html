@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OAB3D • Mapa Mental Lúdico</title>
+  <style>
+    :root {
+      --oab-blue: #1A3350;
+      --oab-gold: #D4AF37;
+      --oab-dark: #333333;
+      --oab-white: #FFFFFF;
+      --bg: #f5f7fb;
+      --line: #d6dbe4;
+      --danger: #8a2f2f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Gotham", "Montserrat", "Avenir Next", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--oab-dark);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.75rem 1rem; background: var(--oab-blue); color: var(--oab-white);
+      border-bottom: 4px solid var(--oab-gold); flex-wrap: wrap;
+    }
+    .brand { font-size: 1.1rem; font-weight: 800; letter-spacing: .3px; }
+    .controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+    button { border: none; border-radius: 8px; padding: .55rem .8rem; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: var(--oab-gold); color: #202020; }
+    .btn-secondary { background: #fff; color: var(--oab-blue); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-muted { background: #e8edf7; color: var(--oab-blue); }
+
+    main { display: grid; grid-template-columns: 320px 1fr; min-height: 0; }
+    aside { border-right: 1px solid var(--line); background: #fff; padding: .8rem; overflow: auto; }
+    aside h2 { color: var(--oab-blue); margin: 0 0 .6rem; font-size: 1rem; }
+    .hint { font-size: .87rem; line-height: 1.35; background: #f8f9fc; border: 1px solid var(--line); border-radius: 10px; padding: .65rem; margin-bottom: .8rem; }
+    .status { margin-top: .8rem; font-size: .8rem; color: #4e5f79; border-top: 1px solid var(--line); padding-top: .6rem; }
+
+    #canvasWrap { position: relative; overflow: auto; background: #fbfcff; }
+    #links { position: absolute; inset: 0; width: 2600px; height: 1600px; pointer-events: none; }
+    #board {
+      position: relative; width: 2600px; height: 1600px;
+      background-image: radial-gradient(#e3e7ef 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+
+    .node {
+      position: absolute;
+      width: 320px;
+      min-height: 190px;
+      color: var(--oab-dark);
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+      border: 2px solid var(--oab-blue);
+      border-radius: 14px;
+      box-shadow: 0 7px 16px rgba(0,0,0,.09);
+      user-select: none;
+      isolation: isolate;
+    }
+    .node::before,
+    .node::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--oab-blue);
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+    .node::before { left: -13px; }
+    .node::after { right: -13px; }
+
+    .node header {
+      all: unset;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: .5rem .65rem;
+      background: var(--oab-blue);
+      color: #fff;
+      border-radius: 12px 12px 0 0;
+      font-weight: 700;
+      cursor: grab;
+      font-size: .86rem;
+    }
+    .title {
+      display: block;
+      flex: 1;
+      outline: none;
+      border-bottom: 1px dashed rgba(255,255,255,.35);
+      padding-bottom: 2px;
+    }
+    .title:empty::before { content: "Título do conceito"; opacity: .68; }
+    .pill { background: rgba(255,255,255,.2); padding: 2px 7px; border-radius: 999px; font-size: .7rem; }
+
+    .desc {
+      margin: .65rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      min-height: 96px;
+      padding: .55rem .65rem;
+      font-size: .86rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      outline: none;
+      background: #fff;
+    }
+    .desc:empty::before { content: "Descrição do conceito e observações..."; color: #8c96ab; }
+
+    .node.selected { outline: 3px solid var(--oab-gold); }
+    .node.source { outline: 3px dashed var(--oab-blue); }
+
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      body { display: block; background: #fff; height: auto; overflow: visible; }
+      header, aside { display: none !important; }
+      main { display: block; }
+      #canvasWrap { overflow: visible; background: #fff; }
+      #board, #links { width: 277mm !important; height: 190mm !important; }
+      #board { background: #fff !important; }
+      .node {
+        box-shadow: none;
+        break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .desc { font-size: 10.5px; line-height: 1.2; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">OAB3D • Mapa Mental em Peças</div>
+    <div class="controls">
+      <button id="addNode" class="btn-secondary">+ Nova peça</button>
+      <button id="linkMode" class="btn-primary">Conectar: desativado</button>
+      <button id="deleteSelected" class="btn-muted">Excluir selecionado</button>
+      <button id="fitView" class="btn-secondary">Ir para o centro</button>
+      <button id="analyzeAi" class="btn-secondary">Feedback com IA</button>
+      <button id="printPdf" class="btn-secondary">Exportar PDF (1 página)</button>
+      <button id="clearAll" class="btn-danger">Reiniciar atividade</button>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <h2>Missão do estudante</h2>
+      <div class="hint">Monte um quebra-cabeça conceitual: preencha o título e a descrição de cada peça, conecte ideias e gere feedback com IA da plataforma.</div>
+      <h2>Como usar</h2>
+      <ol style="font-size:.83rem;line-height:1.35;padding-left:1rem;">
+        <li>Crie peças vazias.</li>
+        <li>Escreva título e descrição em cada peça.</li>
+        <li>Ative <strong>Conectar</strong> e clique em duas peças.</li>
+        <li>Clique em <strong>Feedback com IA</strong> para análise do mapa.</li>
+        <li>Use <strong>Exportar PDF</strong> para gerar 1 página legível.</li>
+      </ol>
+      <div id="status" class="status">Peças: 0 • Conexões: 0</div>
+    </aside>
+
+    <section id="canvasWrap">
+      <svg id="links" aria-label="conectores do mapa"></svg>
+      <div id="board" aria-label="área de mapa mental"></div>
+    </section>
+  </main>
+
+  <script>
+    const board = document.getElementById('board');
+    const links = document.getElementById('links');
+    const wrap = document.getElementById('canvasWrap');
+    const linkModeBtn = document.getElementById('linkMode');
+    const statusEl = document.getElementById('status');
+
+    let nodeId = 1;
+    let selectedNode = null;
+    let isLinkMode = false;
+    let linkSource = null;
+    const edges = [];
+
+    function uid() { return `n${nodeId++}`; }
+    function updateStatus() {
+      statusEl.textContent = `Peças: ${board.querySelectorAll('.node').length} • Conexões: ${edges.length}`;
+    }
+    function escapeHtml(v) {
+      return (v || '').replace(/[&<>\"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+    }
+
+    function createNode({ id = uid(), title = '', desc = '', x = 920, y = 620 }) {
+      const el = document.createElement('article');
+      el.className = 'node';
+      el.dataset.id = id;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.innerHTML = `
+        <header>
+          <span class="title" contenteditable="true" aria-label="título do conceito">${escapeHtml(title)}</span>
+          <span class="pill">${id}</span>
+        </header>
+        <div class="desc" contenteditable="true" aria-label="descrição do conceito">${escapeHtml(desc)}</div>
+      `;
+      board.appendChild(el);
+
+      el.addEventListener('click', (e) => {
+        if (isLinkMode) {
+          e.stopPropagation();
+          if (!linkSource) {
+            linkSource = id;
+            el.classList.add('source');
+          } else if (linkSource !== id) {
+            const exists = edges.some((edge) => edge.from === linkSource && edge.to === id);
+            if (!exists) edges.push({ from: linkSource, to: id });
+            document.querySelector(`[data-id="${linkSource}"]`)?.classList.remove('source');
+            linkSource = null;
+            redrawEdges();
+            updateStatus();
+          }
+          return;
+        }
+        document.querySelectorAll('.node.selected').forEach((n) => n.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedNode = id;
+      });
+
+      const handle = el.querySelector('header');
+      let dragging = false; let dx = 0; let dy = 0;
+      handle.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        handle.style.cursor = 'grabbing';
+        const rect = el.getBoundingClientRect();
+        dx = e.clientX - rect.left;
+        dy = e.clientY - rect.top;
+        handle.setPointerCapture(e.pointerId);
+      });
+      handle.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const br = board.getBoundingClientRect();
+        el.style.left = `${Math.max(0, e.clientX - br.left - dx)}px`;
+        el.style.top = `${Math.max(0, e.clientY - br.top - dy)}px`;
+        redrawEdges();
+      });
+      handle.addEventListener('pointerup', () => { dragging = false; handle.style.cursor = 'grab'; });
+
+      updateStatus();
+      return id;
+    }
+
+    function center(el) { return { x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop + el.offsetHeight / 2 }; }
+    function redrawEdges() {
+      links.innerHTML = '';
+      edges.forEach((edge) => {
+        const a = document.querySelector(`[data-id="${edge.from}"]`);
+        const b = document.querySelector(`[data-id="${edge.to}"]`);
+        if (!a || !b) return;
+        const p1 = center(a); const p2 = center(b);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+        line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+        line.setAttribute('stroke', '#1A3350'); line.setAttribute('stroke-width', '2.5');
+        links.appendChild(line);
+      });
+    }
+
+    function deleteSelectedNode() {
+      if (!selectedNode) return;
+      const node = document.querySelector(`[data-id="${selectedNode}"]`);
+      node?.remove();
+      for (let i = edges.length - 1; i >= 0; i--) {
+        if (edges[i].from === selectedNode || edges[i].to === selectedNode) edges.splice(i, 1);
+      }
+      selectedNode = null;
+      redrawEdges();
+      updateStatus();
+    }
+
+    function serializeMap() {
+      return {
+        pieces: [...board.querySelectorAll('.node')].map((el) => ({
+          id: el.dataset.id,
+          title: el.querySelector('.title')?.textContent?.trim() || '',
+          description: el.querySelector('.desc')?.textContent?.trim() || '',
+          x: Number.parseInt(el.style.left, 10),
+          y: Number.parseInt(el.style.top, 10)
+        })),
+        connections: [...edges]
+      };
+    }
+
+    function requestAiFeedback() {
+      const payload = {
+        type: 'OAB3D_MINDMAP_FEEDBACK_REQUEST',
+        source: 'mindmap-webapp',
+        timestamp: new Date().toISOString(),
+        data: serializeMap()
+      };
+
+      try {
+        window.parent.postMessage(payload, '*');
+        alert('Solicitação enviada para a IA da plataforma. Verifique o painel de feedback.');
+      } catch (error) {
+        alert('Não foi possível acionar a IA da plataforma neste ambiente.');
+      }
+    }
+
+    function bootstrapBlank() {
+      board.innerHTML = ''; links.innerHTML = ''; edges.length = 0;
+      selectedNode = null; linkSource = null;
+      createNode({ title: '', desc: '', x: 680, y: 430 });
+      createNode({ title: '', desc: '', x: 1080, y: 430 });
+      createNode({ title: '', desc: '', x: 880, y: 770 });
+      updateStatus();
+    }
+
+    document.getElementById('addNode').addEventListener('click', () => {
+      createNode({ title: '', desc: '', x: wrap.scrollLeft + 780, y: wrap.scrollTop + 520 });
+    });
+    document.getElementById('deleteSelected').addEventListener('click', deleteSelectedNode);
+    linkModeBtn.addEventListener('click', () => {
+      isLinkMode = !isLinkMode;
+      linkModeBtn.textContent = `Conectar: ${isLinkMode ? 'ativado' : 'desativado'}`;
+      if (!isLinkMode && linkSource) {
+        document.querySelector(`[data-id="${linkSource}"]`)?.classList.remove('source');
+        linkSource = null;
+      }
+    });
+
+    document.getElementById('fitView').addEventListener('click', () => wrap.scrollTo({ left: 700, top: 350, behavior: 'smooth' }));
+    document.getElementById('clearAll').addEventListener('click', () => {
+      if (!confirm('Deseja reiniciar a atividade com peças vazias?')) return;
+      bootstrapBlank();
+    });
+    document.getElementById('printPdf').addEventListener('click', () => window.print());
+    document.getElementById('analyzeAi').addEventListener('click', requestAiFeedback);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Delete') deleteSelectedNode(); });
+
+    bootstrapBlank();
+  </script>
+</body>
+</html>
